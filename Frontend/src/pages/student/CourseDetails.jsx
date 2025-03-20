@@ -193,7 +193,8 @@ const CourseDetails = () => {
                   autoplay: 1,
                 },
               }}
-              iframeClassName="w-full aspect-video"
+              iframe
+              ClassName="w-full aspect-video"
             />
           ) : (
             <img src={courseData.courseThumbnail} alt="course Thumbnail" />
@@ -236,7 +237,7 @@ const CourseDetails = () => {
               </div>
               <div className="h-4 w-px bg-gray-500/40"></div>
               <div className="flex items-center gap-1">
-                <i class="ri-book-open-line"></i>
+                <i className="ri-book-open-line"></i>
                 <p>{calculateCourseLecture(courseData)}</p>
               </div>
             </div>
