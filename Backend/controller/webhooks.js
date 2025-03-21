@@ -1,5 +1,5 @@
 const { Webhook } = require("svix");
-require("dotenv").config();
+
 const User = require("../models/user");
 const stripe = require("stripe");
 const Purchase = require("../models/purchase");
@@ -49,8 +49,8 @@ const clerkWebhooks = async (req, res) => {
 
 const stripeWebhooks = async (req, res) => {
   // Log incoming headers to verify endpoint call
-
   const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
+
   const sig = req.headers["stripe-signature"];
   console.log(req.headers);
   let event;

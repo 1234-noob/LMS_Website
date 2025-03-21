@@ -9,15 +9,18 @@ const connectCloudinary = require("./configs/cloudinary");
 const app = express();
 const courseRoute = require("./routes/course-route");
 const userRoute = require("./routes/user-route");
+
 //middleware
+
+app.post("/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
 
 app.use(express.json());
 app.use(clerkMiddleware());
 app.use(cors());
 
-//adding routes
 app.post("/clerk", clerkWebhooks);
-app.post("/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
+
+//adding routes
 
 app.use("/api/educator", educatorRoute);
 app.use("/api/course", courseRoute);
@@ -27,6 +30,10 @@ const port = process.env.PORT || 3000;
 
 connectDb();
 connectCloudinary();
+
+app.get("/", (req, res) => {
+  res.send("Api working");
+});
 
 app.listen(port, () => {
   console.log(`Server running on the port ${port}`);
