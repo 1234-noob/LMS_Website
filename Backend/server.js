@@ -16,6 +16,8 @@ app.use(clerkMiddleware());
 app.use(cors());
 
 //adding routes
+app.post("/clerk", clerkWebhooks);
+app.post("/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
 
 app.use("/api/educator", educatorRoute);
 app.use("/api/course", courseRoute);
@@ -25,11 +27,6 @@ const port = process.env.PORT || 3000;
 
 connectDb();
 connectCloudinary();
-
-//route for clerk
-
-app.post("/clerk", clerkWebhooks);
-app.post("/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
 
 app.listen(port, () => {
   console.log(`Server running on the port ${port}`);
