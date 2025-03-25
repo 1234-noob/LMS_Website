@@ -16,7 +16,12 @@ app.post("/stripe", express.raw({ type: "application/json" }), stripeWebhooks);
 
 app.use(express.json());
 app.use(clerkMiddleware());
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://lms-website-beta.vercel.app/",
+    methods: "GET,POST",
+  })
+);
 
 app.post("/clerk", clerkWebhooks);
 
