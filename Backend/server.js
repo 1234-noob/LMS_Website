@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(clerkMiddleware());
 app.use(
   cors({
-    origin: "https://lms-website-beta.vercel.app",
+    origin: "https://lms-website-1234-noobs-projects.vercel.app",
     methods: "GET,POST",
   })
 );
