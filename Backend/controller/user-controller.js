@@ -117,27 +117,26 @@ const updateUserCourseProgress = async (req, res) => {
     const userId = req.auth.userId;
     const { courseId, lectureId } = req.body;
 
-    const progressData = await courseProgress.find({
-      userId,
-      courseId,
-    });
+    let progressData = await courseProgress.findOne({ userId, courseId });
     if (!progressData) {
-      if (progressData.lectureCompleted.includes(lectureId)) {
-        res.status(200).json({
-          success: true,
-          message,
-        });
-      }
-      progressData.lectureCompleted.push(lectureId);
-      await progressData.save();
-    } else {
-      await courseProgress.create({
+      progressData = await courseProgress.create({
         userId,
         courseId,
         lectureCompleted: [lectureId],
       });
+      return res
+        .status(201)
+        .json({ success: true, message: "Progress updated" });
     }
-    res.status(201).json({ success: true, message: "Progress updated" });
+    if (progressData.lectureCompleted.includes(lectureId)) {
+      return res.status(200).json({
+        success: true,
+        message: "Lecture already completed",
+      });
+    }
+    progressData.lectureCompleted.push(lectureId);
+    await progressData.save();
+    res.status(200).json({ success: true, message: "Progress updated" });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -157,6 +156,7 @@ const getUserCourseProgress = async (req, res) => {
       userId,
       courseId,
     });
+
     if (!progressData) {
       res.status(400).json({
         success: false,

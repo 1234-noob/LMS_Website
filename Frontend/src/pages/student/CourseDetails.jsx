@@ -7,7 +7,10 @@ import { useParams } from "react-router-dom";
 import { AppContext } from "../../context/AppContext";
 import humanizeDuration from "humanize-duration";
 import Footer from "../../components/student/Footer";
-import YouTube from "react-youtube";
+import ReactPlayer from "react-player";
+
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -18,24 +21,74 @@ const CourseDetails = () => {
     currency,
     calculateCourseDuration,
     calculateCourseLecture,
+    backendUrl,
+    userData,
+    getToken,
   } = useContext(AppContext);
 
   const [playerData, setPlayerData] = useState(null);
+
   const [courseData, setCourseData] = useState(null);
   const [openSection, setOpenSection] = useState({});
   const [isAlreadyEnrolled, setIsAlreadyEnrolled] = useState(false);
+  console.log(playerData);
+
   const fetchCourseData = async () => {
     // find returns undefined if no matching course is found.
-    const foundCourse = allCourses.find((course) => course._id === id);
+    try {
+      const { data } = await axios.get(backendUrl + "/api/course/" + id);
+      if (data.success) {
+        setCourseData(data.courseData);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
-    setCourseData(foundCourse);
+  const enrollCourses = async () => {
+    try {
+      if (!userData) {
+        return toast.warn("Login to enroll");
+      }
+      if (isAlreadyEnrolled) {
+        return toast.warn("Already Enrolled");
+      }
+
+      const token = await getToken();
+      console.log(token);
+      const { data } = await axios.post(
+        backendUrl + "/api/user/purchase",
+        {
+          courseId: courseData._id,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (data.success) {
+        const { session_url } = data;
+        window.location.replace(session_url);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   useEffect(() => {
-    if (allCourses && allCourses.length > 0) {
-      fetchCourseData();
+    fetchCourseData();
+  }, [courseData]);
+
+  useEffect(() => {
+    if (userData && courseData) {
+      setIsAlreadyEnrolled(userData.enrolledCourses.includes(courseData._id));
     }
-  }, [allCourses]);
+  }, [userData, courseData]);
 
   const toggleSection = (index) => {
     setOpenSection((prev) => ({
@@ -49,7 +102,7 @@ const CourseDetails = () => {
       <div className="flex md:flex-row flex-col-reverse gap-10 relative items-start justify-between md:px-36 px-8 md:pt-30 pt-20 text-left">
         <div className="absolute top-0 left-0 w-full h-[500px] -z-1 bg-gradient-to-b from-cyan-100/70 "></div>
         {/* left column */}
-        <div className="max-w-5xl z-10 text-gray-500">
+        <div className="md:min-w-xl z-10 text-gray-500">
           <h1 className="md:text-course-details-heading-large md:leading-course-details-heading-large leading-course-details-heading-small text-course-details-heading-small font-semibold text-gray-800">
             {courseData.courseTitle}
           </h1>
@@ -87,7 +140,9 @@ const CourseDetails = () => {
           </div>
           <p className="text-sm">
             Course by{" "}
-            <span className="text-blue-600 underline">Chinmay Vinarkar</span>
+            <span className="text-blue-600 underline">
+              {courseData.educator.name}
+            </span>
           </p>
           <div className="pt-8 text-gray-800">
             <h2 className="text-xl font-semibold">Course Structure</h2>
@@ -141,9 +196,7 @@ const CourseDetails = () => {
                                 <p
                                   onClick={() =>
                                     setPlayerData({
-                                      videoId: lecture.lectureUrl
-                                        .split("/")
-                                        .pop(),
+                                      videoId: lecture.lectureUrl,
                                     })
                                   }
                                   className="text-blue-500 cursor-pointer"
@@ -186,15 +239,18 @@ const CourseDetails = () => {
         "
         >
           {playerData ? (
-            <YouTube
-              videoId={playerData.videoId}
-              opts={{
-                playerVars: {
-                  autoplay: 1,
+            <ReactPlayer
+              url={playerData.videoId}
+              playing={true}
+              controls={true}
+              config={{
+                youtube: {
+                  playerVars: {
+                    autoplay: 1,
+                  },
                 },
               }}
-              iframe
-              ClassName="w-full aspect-video"
+              width="100%"
             />
           ) : (
             <img src={courseData.courseThumbnail} alt="course Thumbnail" />
@@ -241,7 +297,10 @@ const CourseDetails = () => {
                 <p>{calculateCourseLecture(courseData)}</p>
               </div>
             </div>
-            <button className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium">
+            <button
+              onClick={enrollCourses}
+              className="md:mt-6 mt-4 w-full py-3 rounded bg-blue-600 text-white font-medium"
+            >
               {isAlreadyEnrolled ? "Already Enrolled" : "Enroll Now"}
             </button>
             <div className="pt-6 ">

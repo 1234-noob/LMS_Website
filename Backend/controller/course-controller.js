@@ -1,12 +1,12 @@
-const { response } = require("express");
-const course = require("../models/course");
 const Course = require("../models/course");
+const User = require("../models/user");
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isPublished: true })
-      .select(["-courseContent", "-enrolledStudents"])
-      .populate({ path: "educator" });
+    const courses = await Course.find({ isPublished: true }).select([
+      "-courseContent",
+      "-enrolledStudents",
+    ]);
 
     res.status(200).json({
       success: true,

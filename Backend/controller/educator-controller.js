@@ -1,7 +1,8 @@
 const { clerkClient } = require("@clerk/express");
 const Course = require("../models/course");
 const Purchase = require("../models/purchase");
-const purchase = require("../models/purchase");
+const User = require("../models/user");
+
 const cloudinary = require("cloudinary").v2;
 
 const updateRoleToEducator = async (req, res) => {
@@ -31,7 +32,7 @@ const addCourse = async (req, res) => {
     const { courseData } = req.body;
     const imageFile = req.file;
     const educatorId = req.auth.userId;
-    console.log("hi");
+
     if (!imageFile) {
       return res
         .status(400)
@@ -39,9 +40,17 @@ const addCourse = async (req, res) => {
     }
     const parsedCourseData = await JSON.parse(courseData);
     parsedCourseData.educator = educatorId;
+
     const imageUpload = await cloudinary.uploader.upload(imageFile.path);
 
     const newCourse = await Course.create(parsedCourseData);
+    const educatorData = await User.find({ _id: educatorId });
+    if (!educatorData) {
+      res.status(400).json({
+        success: false,
+        message: "Educator not found",
+      });
+    }
 
     newCourse.courseThumbnail = imageUpload.secure_url;
     await newCourse.save();
@@ -142,6 +151,7 @@ const getEducatorDashboard = async (req, res) => {
 const getEnrolledStudentsData = async (req, res) => {
   try {
     const educator = req.auth.userId;
+
     const educatorCourses = await Course.find({ educator });
 
     const courseIds = educatorCourses.map((course) => course._id);
@@ -149,9 +159,11 @@ const getEnrolledStudentsData = async (req, res) => {
     const purchases = await Purchase.find({
       courseId: { $in: courseIds },
       status: "completed",
-    })
-      .populate("UserId", "name imageUrl")
-      .populate("courseId", "courseTitle");
+    }).populate("courseId", "courseTitle");
+    const userIds = purchases.map((purchase) => purchase.userId);
+    const userData = await User.find({
+      _id: { $in: userIds },
+    });
 
     const enrolledStudents = purchases.map((purchase) => ({
       student: purchase.userId,
@@ -162,6 +174,7 @@ const getEnrolledStudentsData = async (req, res) => {
     res.status(200).json({
       success: true,
       enrolledStudents,
+      userData,
     });
   } catch (error) {
     res.status(500).json({

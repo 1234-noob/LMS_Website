@@ -33,7 +33,6 @@ const Sidebar = () => {
             }
             to={item.path}
             key={ind}
-            end={item.path === "/educator"}
           >
             <img src={item.icon} alt="" className="w-6 h-6" />
             <p className="md:block hidden text-center">{item.name}</p>
